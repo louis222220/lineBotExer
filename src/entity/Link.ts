@@ -11,6 +11,9 @@ export class Link {
     user!: User;
 
     @Column()
+    url!: string;
+
+    @Column()
     isRead!: boolean;
     
     @Column()

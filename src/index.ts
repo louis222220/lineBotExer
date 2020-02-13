@@ -89,7 +89,16 @@ async function handleEvent(event: line.WebhookEvent) {
 
     // save url
     if (helper.validURL(event.message.text)) {
+        let userRepository = getRepository(User);
 
+        let newLink = new Link();
+        let user = await userRepository.findOne({where: {lineUserId: event.source.userId}});
+        
+        newLink.user = user!;
+        newLink.url = event.message.text;
+        newLink.isRead = false;
+        newLink.linkTitle = "TODO";
+        getRepository(Link).save(newLink).then;
 
         let message: line.TextMessage = {
             type: "text",
