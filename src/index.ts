@@ -9,6 +9,7 @@ import {
 import {User} from "./entity/User";
 import {Link} from "./entity/Link";
 import "reflect-metadata";
+import {linkFlexMessage} from "./message";
 
 
 dotenv.config();
@@ -66,6 +67,7 @@ connection.then(async connection => {
 
 // LINE Bot Webhook Event
 async function handleEvent(event: line.WebhookEvent) {
+    // follow the line bot
     if (event.type === 'follow') {
         let userRepository = getRepository(User);
 
@@ -108,7 +110,24 @@ async function handleEvent(event: line.WebhookEvent) {
     }
 
     else if (event.message.text === "all"){
-        return client.replyMessage(event.replyToken, {type: "text", text: "all"});
+        let userRepository = getRepository(User);
+        let user = await userRepository.findOne({where: {lineUserId: event.source.userId}});
+
+
+        let links = await getRepository(Link).find({
+            where: {
+                userId: user?.id
+            }
+        });
+
+        if (links.length > 0){
+            let flex: line.FlexMessage = <line.FlexMessage>linkFlexMessage(links);
+            return client.replyMessage(event.replyToken, flex);
+        }
+        else {
+            return client.replyMessage(event.replyToken, {type: "text", text: "No ToRead links"});
+        }
+
     }
     else if (event.message.text === "list"){
         return client.replyMessage(event.replyToken, {type: "text", text: "list"});
