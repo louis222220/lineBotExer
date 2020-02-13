@@ -65,12 +65,19 @@ connection.then(async connection => {
 
 
 // LINE Bot Webhook Event
-function handleEvent(event: line.WebhookEvent) {
+async function handleEvent(event: line.WebhookEvent) {
     if (event.type === 'follow') {
-        let newUser = new User();
-        newUser.lineUserId = '' + event.source.userId;
-        getRepository(User).save(newUser).then;
+        let userRepository = getRepository(User);
 
+        let foundUser = await userRepository.findOne({
+            where: {lineUserId: event.source.userId}
+        });
+
+        if (! foundUser){
+            let newUser = new User();
+            newUser.lineUserId = '' + event.source.userId;
+            getRepository(User).save(newUser).then;
+        }
     }
 
     if (event.type !== 'message' || event.message.type !== 'text') {
