@@ -151,10 +151,41 @@ async function handleEvent(event: line.WebhookEvent, hostname: string) {
 
     }
     else if (event.message.text === "list"){
-        return client.replyMessage(event.replyToken, {type: "text", text: "list"});
+        let userRepository = getRepository(User);
+        let user = await userRepository.findOne({where: {lineUserId: event.source.userId}});
+
+        let links = await getRepository(Link).find({
+            where: {
+                userId: user?.id, isRead: false
+            }
+        });
+
+        if (links.length > 0){
+            let flex: line.FlexMessage = <line.FlexMessage>linkFlexMessage(links, hostname);
+            return client.replyMessage(event.replyToken, flex);
+        }
+        else {
+            return client.replyMessage(event.replyToken, {type: "text", text: "No ToRead links"});
+        }
     }
     else if (event.message.text === "one"){
-        return client.replyMessage(event.replyToken, {type: "text", text: "one"});
+        let userRepository = getRepository(User);
+        let user = await userRepository.findOne({where: {lineUserId: event.source.userId}});
+
+        let links = await getRepository(Link).find({
+            where: {
+                userId: user?.id, isRead: false
+            }
+        });
+
+        if (links.length > 0){
+            let randomLinkIndex = Math.floor(Math.random() * links.length);
+            let flex: line.FlexMessage = <line.FlexMessage>linkFlexMessage([links[randomLinkIndex]], hostname);
+            return client.replyMessage(event.replyToken, flex);
+        }
+        else {
+            return client.replyMessage(event.replyToken, {type: "text", text: "No ToRead links"});
+        }
     }
-    
+
 }
