@@ -44,13 +44,34 @@ connection.then(async connection => {
 
     app.post('/lineBotWebhook', line.middleware(<line.MiddlewareConfig>config), (req, res) => {
         Promise
-            .all(req.body.events.map(handleEvent))
+            .all(req.body.events.map(
+                function(event: line.WebhookEvent) {
+                    return handleEvent(event, req.hostname);
+                }
+            ))
             .then((result) => res.json(result))
             .catch((err) => {
             console.error(err);
             res.status(500).end();
             });
     });
+
+
+    app.get('/readUrl', async function (req, res) {
+        if (req.query.hasOwnProperty('linkId')) {
+            let link = await getRepository(Link).findOne(req.query.linkId);
+            if (link) {
+                link.isRead = true;
+                getRepository(Link).save(link);
+
+                res.redirect(link.url);
+            }
+        }
+        else {
+            res.send('no link');
+        }
+    });
+
 
     const port = process.env.PORT || 3000;
     app.listen(port, () => {
@@ -66,7 +87,7 @@ connection.then(async connection => {
 
 
 // LINE Bot Webhook Event
-async function handleEvent(event: line.WebhookEvent) {
+async function handleEvent(event: line.WebhookEvent, hostname: string) {
     // follow the line bot
     if (event.type === 'follow') {
         let userRepository = getRepository(User);
@@ -121,7 +142,7 @@ async function handleEvent(event: line.WebhookEvent) {
         });
 
         if (links.length > 0){
-            let flex: line.FlexMessage = <line.FlexMessage>linkFlexMessage(links);
+            let flex: line.FlexMessage = <line.FlexMessage>linkFlexMessage(links, hostname);
             return client.replyMessage(event.replyToken, flex);
         }
         else {
