@@ -10,7 +10,8 @@ import {User} from "./entity/User";
 import {Link} from "./entity/Link";
 import "reflect-metadata";
 import {linkFlexMessage} from "./message";
-
+import * as request from "request-promise";
+import * as cheerio from "cheerio";
 
 dotenv.config();
 
@@ -114,13 +115,19 @@ async function handleEvent(event: line.WebhookEvent, hostname: string) {
     if (helper.validURL(event.message.text)) {
         let userRepository = getRepository(User);
 
+        let result = await request.get({ uri: event.message.text });
+
+        let $ = cheerio.load(result);
+        let title = $("head > title").text().trim();
+
+
         let newLink = new Link();
         let user = await userRepository.findOne({where: {lineUserId: event.source.userId}});
-        
+
         newLink.user = user!;
         newLink.url = event.message.text;
         newLink.isRead = false;
-        newLink.linkTitle = "TODO";
+        newLink.linkTitle = title;
         getRepository(Link).save(newLink).then;
 
         let message: line.TextMessage = {
