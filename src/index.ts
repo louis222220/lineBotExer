@@ -12,6 +12,7 @@ import "reflect-metadata";
 import {linkFlexMessage} from "./message";
 import * as request from "request-promise";
 import * as cheerio from "cheerio";
+import {getRedirectToReadUrl} from "./controller/GetRedirectToReadUrl";
 
 dotenv.config();
 
@@ -58,20 +59,8 @@ connection.then(async connection => {
     });
 
 
-    app.get('/readUrl', async function (req, res) {
-        if (req.query.hasOwnProperty('linkId')) {
-            let link = await getRepository(Link).findOne(req.query.linkId);
-            if (link) {
-                link.isRead = true;
-                getRepository(Link).save(link);
+    app.get('/readUrl', getRedirectToReadUrl);
 
-                res.redirect(link.url);
-            }
-        }
-        else {
-            res.send('no link');
-        }
-    });
 
 
     const port = process.env.PORT || 3000;
