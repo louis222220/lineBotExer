@@ -4,7 +4,7 @@ import {Link} from "./entity/Link";
 export function linkFlexMessage(links: Link[], hostname: string) {
     return {
         type: "flex",
-        altText: "this is a flex message",
+        altText: "Your saved link to read",
         contents: {
             type: "bubble",
             body: {
