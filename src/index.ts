@@ -1,17 +1,16 @@
 import * as line from "@line/bot-sdk";
 import express from "express";
 import dotenv from "dotenv";
-import * as helper from "./helper";
 import {
-    createConnection, Connection, ConnectionOptions,
-    getRepository, getManager, getConnection
+    validURL, checkAndGetCurrentUser, fetchUrlTitle
+} from "./helper";
+import {
+    createConnection, ConnectionOptions, getRepository
 } from "typeorm";
 import {User} from "./entity/User";
 import {Link} from "./entity/Link";
 import "reflect-metadata";
 import {linkFlexMessage} from "./message";
-import * as request from "request-promise";
-import * as cheerio from "cheerio";
 import {getRedirectToReadUrl} from "./controller/GetRedirectToReadUrl";
 
 dotenv.config();
@@ -85,24 +84,19 @@ async function handleEvent(event: line.WebhookEvent, hostname: string) {
     console.log(`Received message: ${event.message.text}`);
 
     // save url
-    if (helper.validURL(event.message.text)) {
-        let result = await request.get({ uri: event.message.text });
-
-        let $ = cheerio.load(result);
-        let title = $("head > title").text().trim();
-
+    if (validURL(event.message.text)) {
+        let title = await fetchUrlTitle(event.message.text);
 
         let newLink = new Link();
-
         newLink.user = currentUser;
         newLink.url = event.message.text;
         newLink.isRead = false;
         newLink.linkTitle = title;
-        getRepository(Link).save(newLink).then;
+        await getRepository(Link).save(newLink);
 
         let message: line.TextMessage = {
             type: "text",
-            text: `It's an URL: ${event.message.text}`
+            text: `To Read URL saved: ${event.message.text}`
         };
         return client.replyMessage(event.replyToken, message);
     }
@@ -121,8 +115,8 @@ async function handleEvent(event: line.WebhookEvent, hostname: string) {
         else {
             return client.replyMessage(event.replyToken, {type: "text", text: "No ToRead links"});
         }
-
     }
+
     else if (event.message.text === "list"){
         let links = await getRepository(Link).find({
             where: {
@@ -138,6 +132,7 @@ async function handleEvent(event: line.WebhookEvent, hostname: string) {
             return client.replyMessage(event.replyToken, {type: "text", text: "No ToRead links"});
         }
     }
+
     else if (event.message.text === "one"){
         let links = await getRepository(Link).find({
             where: {
@@ -153,24 +148,5 @@ async function handleEvent(event: line.WebhookEvent, hostname: string) {
         else {
             return client.replyMessage(event.replyToken, {type: "text", text: "No ToRead links"});
         }
-    }
-}
-
-
-async function checkAndGetCurrentUser(lineUserId: string): Promise<User> {
-    let userRepository = getRepository(User);
-
-    let foundUser = await userRepository.findOne({
-        where: {lineUserId: lineUserId}
-    });
-
-    if (! foundUser){
-        let newUser = new User();
-        newUser.lineUserId = lineUserId;
-        await userRepository.save(newUser);
-        return newUser;
-    }
-    else {
-        return foundUser;
     }
 }
