@@ -10,7 +10,7 @@ export class Link {
     @ManyToOne(type => User, user => user.links)
     user!: User;
 
-    @Column()
+    @Column({ length: "1023" })
     url!: string;
 
     @Column()

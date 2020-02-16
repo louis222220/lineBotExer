@@ -83,7 +83,7 @@ async function handleEvent(event: line.WebhookEvent, hostname: string) {
 
     console.log(`Received message: ${event.message.text}`);
     
-    event.message.text = event.message.text.trim();
+    event.message.text = encodeURI(event.message.text.trim());
 
     // save url
     if (validURL(event.message.text)) {
