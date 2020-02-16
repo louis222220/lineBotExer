@@ -26,12 +26,13 @@ function linksToButtons(links: Link[], hostname: string) {
 }
 
 function linkToButton(link: Link, hostname: string) {
+    const flexMessageLabelCharacterLimit = 39;
     return {
         type: "button",
         style: "link",
         action: {
             type: "uri",
-            label: link.linkTitle,
+            label: link.linkTitle.substring(0, flexMessageLabelCharacterLimit),
             uri: `https://${hostname}/readUrl?linkId=` +  link.id
         }
     };
