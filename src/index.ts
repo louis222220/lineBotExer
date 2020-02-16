@@ -72,38 +72,20 @@ connection.then(async connection => {
 }).catch(error => console.log(error));
 
 
-
-
-
-
 // LINE Bot Webhook Event
 async function handleEvent(event: line.WebhookEvent, hostname: string) {
-    // follow the line bot
-    if (event.type === 'follow') {
-        let userRepository = getRepository(User);
-
-        let foundUser = await userRepository.findOne({
-            where: {lineUserId: event.source.userId}
-        });
-
-        if (! foundUser){
-            let newUser = new User();
-            newUser.lineUserId = '' + event.source.userId;
-            getRepository(User).save(newUser).then;
-        }
-    }
-
     if (event.type !== 'message' || event.message.type !== 'text') {
         // ignore non-text-message event
         return Promise.resolve(null);
     }
 
+
+    let currentUser = await checkAndGetCurrentUser(<string>event.source.userId);
+
     console.log(`Received message: ${event.message.text}`);
 
     // save url
     if (helper.validURL(event.message.text)) {
-        let userRepository = getRepository(User);
-
         let result = await request.get({ uri: event.message.text });
 
         let $ = cheerio.load(result);
@@ -111,9 +93,8 @@ async function handleEvent(event: line.WebhookEvent, hostname: string) {
 
 
         let newLink = new Link();
-        let user = await userRepository.findOne({where: {lineUserId: event.source.userId}});
 
-        newLink.user = user!;
+        newLink.user = currentUser;
         newLink.url = event.message.text;
         newLink.isRead = false;
         newLink.linkTitle = title;
@@ -127,13 +108,9 @@ async function handleEvent(event: line.WebhookEvent, hostname: string) {
     }
 
     else if (event.message.text === "all"){
-        let userRepository = getRepository(User);
-        let user = await userRepository.findOne({where: {lineUserId: event.source.userId}});
-
-
         let links = await getRepository(Link).find({
             where: {
-                userId: user?.id
+                user: currentUser
             }
         });
 
@@ -147,12 +124,9 @@ async function handleEvent(event: line.WebhookEvent, hostname: string) {
 
     }
     else if (event.message.text === "list"){
-        let userRepository = getRepository(User);
-        let user = await userRepository.findOne({where: {lineUserId: event.source.userId}});
-
         let links = await getRepository(Link).find({
             where: {
-                userId: user?.id, isRead: false
+                user: currentUser, isRead: false
             }
         });
 
@@ -165,12 +139,9 @@ async function handleEvent(event: line.WebhookEvent, hostname: string) {
         }
     }
     else if (event.message.text === "one"){
-        let userRepository = getRepository(User);
-        let user = await userRepository.findOne({where: {lineUserId: event.source.userId}});
-
         let links = await getRepository(Link).find({
             where: {
-                userId: user?.id, isRead: false
+                user: currentUser, isRead: false
             }
         });
 
@@ -183,5 +154,23 @@ async function handleEvent(event: line.WebhookEvent, hostname: string) {
             return client.replyMessage(event.replyToken, {type: "text", text: "No ToRead links"});
         }
     }
+}
 
+
+async function checkAndGetCurrentUser(lineUserId: string): Promise<User> {
+    let userRepository = getRepository(User);
+
+    let foundUser = await userRepository.findOne({
+        where: {lineUserId: lineUserId}
+    });
+
+    if (! foundUser){
+        let newUser = new User();
+        newUser.lineUserId = lineUserId;
+        await userRepository.save(newUser);
+        return newUser;
+    }
+    else {
+        return foundUser;
+    }
 }
