@@ -82,6 +82,8 @@ async function handleEvent(event: line.WebhookEvent, hostname: string) {
     let currentUser = await checkAndGetCurrentUser(<string>event.source.userId);
 
     console.log(`Received message: ${event.message.text}`);
+    
+    event.message.text = event.message.text.trim();
 
     // save url
     if (validURL(event.message.text)) {
