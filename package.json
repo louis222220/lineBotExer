@@ -31,6 +31,6 @@
     "reflect-metadata": "^0.1.13",
     "request": "^2.88.2",
     "request-promise": "^4.2.5",
-    "typeorm": "^0.2.22"
+    "typeorm": "^0.2.25"
   }
 }
